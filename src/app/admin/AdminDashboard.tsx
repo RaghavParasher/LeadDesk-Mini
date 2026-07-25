@@ -20,7 +20,7 @@ import {
   AlertCircle
 } from "lucide-react";
 
-interface Lead {
+export interface Lead {
   id: string;
   name: string;
   email: string;

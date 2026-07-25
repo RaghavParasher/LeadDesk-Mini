@@ -2,8 +2,7 @@ import React from "react";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
-import AdminDashboard from "./AdminDashboard";
-import { Lead } from "@prisma/client";
+import AdminDashboard, { Lead } from "./AdminDashboard";
 
 export const dynamic = "force-dynamic";
 
