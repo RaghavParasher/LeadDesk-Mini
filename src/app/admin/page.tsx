@@ -3,6 +3,7 @@ import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import AdminDashboard from "./AdminDashboard";
+import { Lead } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,7 @@ export default async function AdminPage() {
   // 3. Render the client dashboard
   return (
     <AdminDashboard
-      initialLeads={leads.map((lead) => ({
+      initialLeads={leads.map((lead: Lead) => ({
         ...lead,
         createdAt: lead.createdAt, // safe casting for dates
         updatedAt: lead.updatedAt,
