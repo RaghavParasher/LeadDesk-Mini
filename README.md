@@ -1,19 +1,56 @@
 # LeadDesk Mini
 
-A secure, high-fidelity, and performant lead capture application and pipeline management console built with Next.js (App Router), Tailwind CSS, and Prisma ORM connecting to a Neon PostgreSQL database.
+An elite, secure, and performant lead capture application and pipeline management console built with Next.js (App Router, React 19), Tailwind CSS, and Prisma 7 ORM connecting to a Neon PostgreSQL database.
 
-## Architecture & Features
-
-- **Lead Capture Form:** Public-facing landing page with responsive forms, client-side/server-side validations via Zod schemas, and instant feedback.
-- **Admin Dashboard:** Pipeline console with debounced query search, status filters, and real-time inline status mutations (New / Contacted / Closed).
-- **Responsive Layout:** Minimalist design adhering to a 4px/8px grid system, rendering tabular views on desktop and collapsing into cards on mobile.
-- **Robust Security:** Zero hardcoded credentials, custom secure cookies, and route guards.
+<div align="center">
+  <br />
+  
+  [![Vercel Deployment](https://img.shields.io/badge/Vercel-Deployed-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://lead-desk-mini-mu.vercel.app/)
+  &nbsp;
+  [![Live Admin Login](https://img.shields.io/badge/Admin%20Login-Console-4f46e5?style=for-the-badge&logo=auth0&logoColor=white)](https://lead-desk-mini-mu.vercel.app/login)
+  &nbsp;
+  [![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178c6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+  
+  [![Prisma ORM](https://img.shields.io/badge/Prisma-7.9-2d3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io/)
+  &nbsp;
+  [![Neon Database](https://img.shields.io/badge/Neon-PostgreSQL-00e599?style=for-the-badge&logo=postgresql&logoColor=black)](https://neon.tech/)
+</div>
 
 ---
 
-## Data Model
+## 🔗 Live Deploy & Access Links
 
-The application models data with three core tables in PostgreSQL using Prisma ORM:
+*   **Public Landing Page:** [https://lead-desk-mini-mu.vercel.app/](https://lead-desk-mini-mu.vercel.app/)
+*   **Admin Console:** [https://lead-desk-mini-mu.vercel.app/admin](https://lead-desk-mini-mu.vercel.app/admin)
+*   **Admin Login Link:** [https://lead-desk-mini-mu.vercel.app/login](https://lead-desk-mini-mu.vercel.app/login)
+
+---
+
+## 🔑 Recruiter Sandbox Credentials
+
+To test the admin console and pipeline management panel, use the following pre-seeded sandbox credentials:
+
+*   **Email:** `admin@leaddesk.com`
+*   **Password:** `AdminPass123!`
+
+> [!NOTE]
+> **Professional Security Disclaimer:**
+> These credentials are provided strictly for evaluation testing. In a production environment, default accounts are disabled in favor of dynamic administrator invitation flows, and secret strings are managed securely via cloud environment parameters rather than committed configurations.
+
+---
+
+## 🛠️ Architecture & Core Features
+
+*   **Optimized Lead Capture Form:** An elegant, dark-themed public interface featuring smooth transitions. Validates form inputs on both client and server layers using Zod schemas.
+*   **Responsive Control Panel:** Responsive pipeline interface that renders as a tabular layout on desktops and automatically collapses into individual grid cards on mobile screens (fully supporting screens down to 320px).
+*   **Inline Mutations:** State changes (New $\rightarrow$ Contacted $\rightarrow$ Closed) are managed inline via secure server actions and saved dynamically into the Neon database.
+*   **Debounced Pipelines:** Real-time query search backed by a 300ms debounce cycle and status filtering tabs to handle large volumes of lead records efficiently.
+
+---
+
+## 📊 Data Model Schema
+
+The data layer uses three core models built with PostgreSQL:
 
 ```mermaid
 erDiagram
@@ -45,84 +82,54 @@ erDiagram
     }
 ```
 
-### Table Breakdown
-1. **User:** Holds administrative user accounts. Passwords are encrypted with `bcryptjs` (salt rounds: 12) before storage.
-2. **Session:** Stores active session states. Maps users to random session tokens, validating lifetimes and enabling absolute session revocation.
-3. **Lead:** Stores inquiry forms. Budgets are stored as ranges and status represents the current funnel state (`New`, `Contacted`, or `Closed`).
+---
+
+## 🔒 Custom Authentication & Security Design
+
+We implemented a custom cookie-based database session store rather than heavy third-party providers (like Auth.js or Clerk), keeping the architecture clean and lightweight:
+
+1.  **Hashed Passwords:** User passwords are encrypted using `bcryptjs` with 12 salt rounds before database storage.
+2.  **HttpOnly Cookies:** Active sessions write a secure cryptographically random token to the database and place it in the browser's cookie jar with `httpOnly: true`, `secure: true` (HTTPS only), and `sameSite: "lax"` policies (mitigating XSS and CSRF).
+3.  **Session Rotation:** Whenever an admin verifies their session, the application checks if the token lifetime is half-expired. If so, it automatically extends the expiration date in the database and rotates the cookie.
+4.  **Edge-Safe Route Guard:** 
+    *   **Edge Middleware (`src/proxy.ts`):** Standard database drivers cannot be run in the Edge runtime. To bypass this Next.js constraint, the proxy middleware does a fast verification checks to see if the session cookie is present. If missing, it immediately redirects to `/login` before rendering routes.
+    *   **Node Server Layer (`src/app/admin/page.tsx`):** The Server Component retrieves the cookie, queries the Neon database via Prisma to confirm the token is valid, active, and belongs to an `ADMIN`. If validation fails, it deletes the cookie and redirects the user.
 
 ---
 
-## Authentication & Route Guard Strategy
+## 💻 Local Setup & Development
 
-This application utilizes a custom database-backed session-cookie mechanism to achieve secure, stateful session control without external framework bloat:
-
-1. **Authentication Flow:**
-   - On submitting credentials, the server validates fields against a Zod login schema.
-   - It retrieves the user from the database and compares passwords using `bcrypt.compare`.
-   - If valid, a cryptographically secure random session token is generated, stored in the `Session` database table, and set as a cookie.
-2. **Secure Session Cookie Configuration:**
-   - **`httpOnly: true`** - Block client-side JavaScript access (mitigates XSS attacks).
-   - **`secure: true`** (in production) - Force cookies to be sent only over HTTPS.
-   - **`sameSite: "lax"`** - Prevent cross-site request forgery (CSRF) on cross-origin navigations.
-   - **Expiration** - Sessions expire after 24 hours. The cookie lifetime is aligned with this value.
-3. **Session Rotation:**
-   - To keep users active seamlessly while mitigating session hijacking, the verification utility checks if the session is half-expired. If so, it automatically extends the expiration date in the database and updates the browser cookie.
-4. **Edge-Safe Route Protection:**
-   - Protection is configured in `middleware.ts`. Because Next.js Middleware runs in the Edge Runtime, direct database imports are blocked.
-   - **Edge Layer:** The middleware performs a fast check for the existence of the `leaddesk_session` cookie. If it is completely missing, the request is immediately redirected to `/login` before executing server-side components.
-   - **Node.js Layer:** In `/admin/page.tsx`, the Server Component retrieves the cookie, queries the Neon database via Prisma to confirm the token is valid, active, and belongs to an `ADMIN`. If validation fails, it safely deletes the cookie and redirects to `/login`.
-
----
-
-## Getting Started
-
-### Prerequisites
+### 1. Prerequisites
 - Node.js (v18.x or higher)
-- A PostgreSQL database connection string (e.g. from Neon or Supabase)
+- A Neon PostgreSQL or local database connection string
 
-### Environment Variables
-Create a `.env` file in the root directory:
+### 2. Environment Configuration
+Create a `.env` file in the root of the project:
 
 ```env
 DATABASE_URL="your-postgresql-connection-string"
 ADMIN_EMAIL="admin@leaddesk.com"
-ADMIN_PASSWORD="YourSecurePasswordHere123!"
-SESSION_SECRET="your-32-char-random-string"
+ADMIN_PASSWORD="AdminPass123!"
+SESSION_SECRET="e9a2b8e3a5f4c672d89b1c0e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a"
 ```
 
-### Installation
-1. Clone the repository and install dependencies:
-   ```bash
-   git clone https://github.com/RaghavParasher/LeadDesk-Mini.git
-   cd LeadDesk-Mini
-   npm install
-   ```
+### 3. Quick Start Commands
 
-2. Initialize and sync the database schema:
-   ```bash
-   npx prisma db push
-   ```
+```bash
+# Clone the repository
+git clone https://github.com/RaghavParasher/LeadDesk-Mini.git
+cd LeadDesk-Mini
 
-3. Seed the default admin user:
-   ```bash
-   node prisma/seed.js
-   ```
+# Install dependencies
+npm install
 
-4. Run the development server:
-   ```bash
-   npm run dev
-   ```
-   Open [http://localhost:3000](http://localhost:3000) in your browser.
+# Push schema to database
+npx prisma db push
 
----
+# Seed admin user credentials
+node prisma/seed.js
 
-## Production Build & Testing
-
-- **Verify production compile:**
-  ```bash
-  npm run build
-  ```
-- **Launch production server:**
-  ```bash
-  npm start
-  ```
+# Launch local dev server
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
