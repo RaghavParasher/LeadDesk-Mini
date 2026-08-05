@@ -14,6 +14,11 @@ An elite, secure, and performant lead capture application and pipeline managemen
   [![Prisma ORM](https://img.shields.io/badge/Prisma-7.9-2d3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io/)
   &nbsp;
   [![Neon Database](https://img.shields.io/badge/Neon-PostgreSQL-00e599?style=for-the-badge&logo=postgresql&logoColor=black)](https://neon.tech/)
+ 
+<br/>
+<img src="./mockup.jpg" width="100%" alt="LeadDesk Mini Dashboard Mockup" />
+<br/>
+
 </div>
 
 ---
